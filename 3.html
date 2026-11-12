@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>중3 올인원 스터디 플래너 | StudyLog 16</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Pretendard 웹폰트 -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <!-- Font Awesome 아이콘 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'sans-serif'],
+          },
+          colors: {
+            skyaccent: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background-color: #ffffff;
+      color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+      letter-spacing: -0.015em;
+    }
+    /* 커스텀 스크롤바 */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #ffffff;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    /* 10분 타임테이블 드래그 선택 방지 */
+    .timetable-grid {
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: pan-y;
+    }
+    .time-cell {
+      transition: transform 0.08s ease, background-color 0.12s ease;
+    }
+    .time-cell:active {
+      transform: scale(0.92);
+    }
+    /* 탭 전환 애니메이션 */
+    .tab-content {
+      animation: fadeIn 0.2s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col pb-24 md:pb-10 bg-white text-slate-900">
+
+  <!-- 상단 헤더 & D-Day 배너 -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-2">
+      <!-- 로고 & 타이틀 -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-100 to-violet-100 border border-sky-200/80 flex items-center justify-center text-sky-900">
+          <i class="fa-solid fa-graduation-cap text-base"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-extrabold text-slate-950 tracking-tight leading-tight">중3 스터디 플래너</h1>
+          <p id="header-today-date" class="text-xs text-slate-500 font-medium">2026년 11월 12일 (목)</p>
+        </div>
+      </div>
+
+      <!-- D-Day 배너 & 설정 버튼 -->
+      <div class="flex items-center gap-2">
+        <button onclick="openDdayModal()" class="group flex items-center gap-2 bg-gradient-to-r from-sky-100 to-violet-100 hover:from-sky-200/80 hover:to-violet-200/80 border border-sky-200/80 px-3.5 py-1.5 rounded-full transition-all">
+          <span class="text-xs font-bold text-slate-900 truncate max-w-[120px] sm:max-w-[180px]" id="dday-title-display">2학기 기말고사</span>
+          <span class="px-2.5 py-0.5 text-xs font-extrabold rounded-full bg-white/90 text-sky-950 border border-sky-200/60" id="dday-count-display">D-20</span>
+          <i class="fa-solid fa-pen text-[10px] text-sky-800 group-hover:text-slate-950"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 데스크탑 상단 탭 네비게이션 -->
+    <nav class="hidden md:block border-t border-slate-100 bg-white">
+      <div class="max-w-5xl mx-auto px-6 flex gap-6">
+        <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-btn-desktop flex items-center gap-2 py-3 text-sm font-bold border-b-2 border-sky-300 text-slate-950 transition-colors">
+          <i class="fa-solid fa-house text-sky-700"></i> 오늘의 대시보드
+        </button>
+        <button onclick="switchTab('calendar')" data-tab="calendar" class="nav-btn-desktop flex items-center gap-2 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-900 transition-colors">
+          <i class="fa-regular fa-calendar-days"></i> 월간 일정 캘린더
+        </button>
+        <button onclick="switchTab('timetable')" data-tab="timetable" class="nav-btn-desktop flex items-center gap-2 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-900 transition-colors">
+          <i class="fa-solid fa-stopwatch"></i> 10분 타임테이블
+        </button>
+        <button onclick="switchTab('notes')" data-tab="notes" class="nav-btn-desktop flex items-center gap-2 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-900 transition-colors">
+          <i class="fa-solid fa-book-open"></i> 과목별 복습 노트
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- 메인 컨테이너 -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6">
+
+    <!-- ==================== TAB 1: 대시보드 & 단계별 체크리스트 ==================== -->
+    <section id="tab-dashboard" class="tab-content space-y-6">
+      <!-- 상단 요약 카드 3개 -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- 오늘 순공시간 -->
+        <div onclick="switchTab('timetable')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 transition-all flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-slate-500 mb-1">오늘 순공부 시간</p>
+            <p id="dash-study-time" class="text-2xl font-extrabold text-slate-950">0시간 0분</p>
+            <p class="text-[11px] text-sky-800 font-bold mt-1.5">타임테이블 기록하기 →</p>
+          </div>
+          <div class="w-11 h-11 rounded-xl bg-sky-100 text-sky-900 border border-sky-200/70 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+        </div>
+
+        <!-- 오늘 할 일 달성률 -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 flex items-center justify-between">
+          <div class="w-full pr-3">
+            <div class="flex justify-between items-center mb-1">
+              <p class="text-xs font-bold text-slate-500">오늘 목표 달성률</p>
+              <span id="dash-daily-percent" class="text-xs font-extrabold text-sky-950 bg-gradient-to-r from-sky-100 to-violet-100 border border-sky-200/60 px-2 py-0.5 rounded-full">0%</span>
+            </div>
+            <p id="dash-daily-count" class="text-xl font-extrabold text-slate-950 mb-2.5">0 / 0 완료</p>
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div id="dash-daily-bar" class="bg-gradient-to-r from-sky-300 to-violet-300 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="w-11 h-11 shrink-0 rounded-xl bg-violet-100 text-violet-900 border border-violet-200/70 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-check-double"></i>
+          </div>
+        </div>
+
+        <!-- 오늘의 일정 요약 -->
+        <div onclick="switchTab('calendar')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 transition-all flex items-center justify-between">
+          <div class="min-w-0 pr-2">
+            <p class="text-xs font-bold text-slate-500 mb-1">오늘 예정된 일정</p>
+            <p id="dash-today-events" class="text-xl font-extrabold text-slate-950">0건</p>
+            <p id="dash-today-events-sub" class="text-[11px] text-sky-800 font-bold mt-1.5 truncate">캘린더에서 일정 보기 →</p>
+          </div>
+          <div class="w-11 h-11 shrink-0 rounded-xl bg-emerald-100 text-emerald-900 border border-emerald-200/70 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-calendar-check"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- 단계별 체크리스트 (월간 / 주간 / 일간) -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-950 flex items-center gap-2">
+              <span class="w-2 h-5 rounded-full bg-gradient-to-b from-sky-300 to-violet-300 inline-block"></span> 단계별 공부 체크리스트
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">이번 달 큰 목표부터 오늘 당장 끝낼 할 일까지 깔끔하게 정리하세요.</p>
+          </div>
+
+          <!-- 기간 전환 필터 버튼 -->
+          <div class="flex bg-slate-100/90 p-1 rounded-xl self-start sm:self-auto border border-slate-200/60">
+            <button onclick="setChecklistScope('daily')" data-scope="daily" class="scope-btn px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-gradient-to-r from-sky-100 to-violet-100 text-slate-950 border border-sky-200/80 transition-all">
+              오늘 할 일
+            </button>
+            <button onclick="setChecklistScope('weekly')" data-scope="weekly" class="scope-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-950 transition-all">
+              이번 주 목표
+            </button>
+            <button onclick="setChecklistScope('monthly')" data-scope="monthly" class="scope-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-950 transition-all">
+              이번 달 목표
+            </button>
+          </div>
+        </div>
+
+        <!-- 현재 선택된 범위의 진행률 바 -->
+        <div class="bg-gradient-to-r from-sky-50/90 to-violet-50/70 rounded-xl p-4 mb-5 border border-sky-100">
+          <div class="flex justify-between items-center mb-2">
+            <span id="checklist-scope-label" class="text-xs font-bold text-slate-900">오늘 할 일 달성률</span>
+            <span id="checklist-progress-text" class="text-xs font-extrabold text-sky-950">0% (0/0)</span>
+          </div>
+          <div class="w-full bg-white h-2.5 rounded-full overflow-hidden border border-sky-200/70">
+            <div id="checklist-progress-bar" class="bg-gradient-to-r from-sky-300 to-violet-300 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 새 체크리스트 입력 폼 -->
+        <form onsubmit="addChecklistItem(event)" class="flex flex-col sm:flex-row gap-2.5 mb-5">
+          <select id="todo-subject" class="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100">
+            <option value="국어">국어</option>
+            <option value="수학" selected>수학</option>
+            <option value="영어">영어</option>
+            <option value="과학">과학</option>
+            <option value="사회/역사">사회/역사</option>
+            <option value="기타">기타</option>
+          </select>
+          <input type="text" id="todo-input" placeholder="예: 쎈 수학 이차방정식 C단계 15문제 풀기" required
+            class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100" />
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-sky-300 hover:bg-sky-200 text-slate-950 border border-sky-300 text-sm font-extrabold transition-colors flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-plus text-xs"></i> 추가
+          </button>
+        </form>
+
+        <!-- 체크리스트 목록 -->
+        <ul id="checklist-items" class="space-y-2.5">
+          <!-- JS로 렌더링 -->
+        </ul>
+      </div>
+
+      <!-- 3단 한눈에 보기 (월간/주간/일간 동시 요약) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="text-xs font-extrabold text-violet-950 bg-violet-100 border border-violet-200/80 px-2.5 py-1 rounded-lg">이번 달 핵심 목표</span>
+            <span id="mini-monthly-stat" class="text-xs font-bold text-slate-500">0/0</span>
+          </div>
+          <ul id="mini-monthly-list" class="space-y-1.5 text-xs text-slate-800 mt-2"></ul>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="text-xs font-extrabold text-sky-950 bg-sky-100 border border-sky-200/80 px-2.5 py-1 rounded-lg">이번 주 핵심 목표</span>
+            <span id="mini-weekly-stat" class="text-xs font-bold text-slate-500">0/0</span>
+          </div>
+          <ul id="mini-weekly-list" class="space-y-1.5 text-xs text-slate-800 mt-2"></ul>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="text-xs font-extrabold text-emerald-950 bg-emerald-100 border border-emerald-200/80 px-2.5 py-1 rounded-lg">오늘 끝낼 할 일</span>
+            <span id="mini-daily-stat" class="text-xs font-bold text-slate-500">0/0</span>
+          </div>
+          <ul id="mini-daily-list" class="space-y-1.5 text-xs text-slate-800 mt-2"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: 월간 일정 캘린더 ==================== -->
+    <section id="tab-calendar" class="tab-content hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- 달력 영역 (2컬럼) -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2">
+              <button onclick="changeMonth(-1)" class="w-9 h-9 rounded-xl border border-slate-200 hover:bg-sky-50 hover:border-sky-200 flex items-center justify-center text-slate-800 transition-colors">
+                <i class="fa-solid fa-chevron-left text-xs"></i>
+              </button>
+              <h2 id="calendar-month-title" class="text-lg sm:text-xl font-extrabold text-slate-950 px-2">2026년 11월</h2>
+              <button onclick="changeMonth(1)" class="w-9 h-9 rounded-xl border border-slate-200 hover:bg-sky-50 hover:border-sky-200 flex items-center justify-center text-slate-800 transition-colors">
+                <i class="fa-solid fa-chevron-right text-xs"></i>
+              </button>
+            </div>
+            <button onclick="goToTodayCalendar()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-100 to-violet-100 hover:from-sky-200/70 hover:to-violet-200/70 text-slate-950 border border-sky-200/80 text-xs font-bold transition-colors">
+              오늘로 이동
+            </button>
+          </div>
+
+          <!-- 요일 헤더 -->
+          <div class="grid grid-cols-7 text-center text-xs font-bold mb-2">
+            <div class="text-rose-400 py-1">일</div>
+            <div class="text-slate-600 py-1">월</div>
+            <div class="text-slate-600 py-1">화</div>
+            <div class="text-slate-600 py-1">수</div>
+            <div class="text-slate-600 py-1">목</div>
+            <div class="text-slate-600 py-1">금</div>
+            <div class="text-sky-500 py-1">토</div>
+          </div>
+
+          <!-- 날짜 그리드 -->
+          <div id="calendar-grid" class="grid grid-cols-7 gap-1 sm:gap-1.5">
+            <!-- JS로 날짜 렌더링 -->
+          </div>
+        </div>
+
+        <!-- 선택된 날짜 상세 일정 & 추가 패널 (1컬럼) -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-100">
+              <div>
+                <span class="text-xs font-bold text-sky-800">선택된 날짜 일정</span>
+                <h3 id="selected-date-title" class="text-lg font-extrabold text-slate-950 mt-0.5">2026년 11월 12일</h3>
+              </div>
+              <span id="selected-date-badge" class="px-2.5 py-1 rounded-full bg-gradient-to-r from-sky-100 to-violet-100 text-slate-950 border border-sky-200/80 text-xs font-extrabold">오늘</span>
+            </div>
+
+            <!-- 일정 추가 폼 -->
+            <form onsubmit="addCalendarEvent(event)" class="space-y-2.5 mb-5 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80">
+              <div class="flex gap-2">
+                <select id="event-category" class="px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:border-sky-300">
+                  <option value="시험">🌸 시험/모의고사</option>
+                  <option value="수행평가">🍑 수행평가/숙제</option>
+                  <option value="학원">💎 학원/인강</option>
+                  <option value="개인">🌿 개인/학교행사</option>
+                </select>
+                <input type="time" id="event-time" class="px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:border-sky-300" />
+              </div>
+              <div class="flex gap-2">
+                <input type="text" id="event-title" placeholder="일정 내용 입력 (예: 영어 수행평가 말하기)" required
+                  class="flex-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-300" />
+                <button type="submit" class="px-4 py-2 rounded-lg bg-sky-300 hover:bg-sky-200 text-slate-950 border border-sky-300 text-xs font-extrabold shrink-0 transition-colors">
+                  등록
+                </button>
+              </div>
+            </form>
+
+            <!-- 해당 날짜 일정 리스트 -->
+            <div id="selected-date-events" class="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+              <!-- JS로 렌더링 -->
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-info text-sky-400"></i> 달력의 날짜를 누르면 일정을 확인하고 추가할 수 있어요.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: 10분 단위 스터디 타임테이블 ==================== -->
+    <section id="tab-timetable" class="tab-content hidden space-y-5">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+        <!-- 상단 날짜 선택 & 총 공부시간 -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-100">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-950 flex items-center gap-2">
+              <span class="w-2 h-5 rounded-full bg-gradient-to-b from-sky-300 to-violet-300 inline-block"></span> 10분 단위 스터디 타임테이블
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">과목 색상을 선택한 뒤 시간 칸을 클릭하거나 드래그해서 공부량을 기록하세요. (1칸 = 10분)</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="date" id="timetable-date-picker" onchange="changeTimetableDate(this.value)"
+              class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:outline-none focus:border-sky-300" />
+            <button onclick="clearTimetableDay()" class="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-rose-50 hover:text-rose-900 hover:border-rose-200 text-xs font-bold transition-colors">
+              초기화
+            </button>
+          </div>
+        </div>
+
+        <!-- 과목 팔레트 선택 바 -->
+        <div class="mb-5">
+          <p class="text-xs font-bold text-slate-700 mb-2">1. 색칠할 과목(또는 지우개) 선택:</p>
+          <div id="subject-palette" class="flex flex-wrap gap-2">
+            <!-- JS로 과목 팔레트 버튼 생성 -->
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- 10분 그리드 (06:00 ~ 02:00, 총 20시간 * 6칸 = 120칸) -->
+          <div class="lg:col-span-2 bg-slate-50/70 p-3.5 sm:p-4 rounded-2xl border border-slate-200">
+            <!-- 분 헤더 (10, 20, 30, 40, 50, 60) -->
+            <div class="grid grid-cols-[48px_repeat(6,1fr)] gap-1 mb-1.5 text-center text-[11px] font-bold text-slate-500">
+              <div>시간</div>
+              <div>10m</div>
+              <div>20m</div>
+              <div>30m</div>
+              <div>40m</div>
+              <div>50m</div>
+              <div>60m</div>
+            </div>
+            <!-- 타임테이블 본문 -->
+            <div id="timetable-grid" class="timetable-grid space-y-1">
+              <!-- JS로 6시~새벽2시 렌더링 -->
+            </div>
+          </div>
+
+          <!-- 오른쪽 통계 패널 -->
+          <div class="space-y-4">
+            <div class="bg-gradient-to-br from-sky-100 to-violet-100 border border-sky-200/80 text-slate-950 p-5 rounded-2xl">
+              <p class="text-xs font-bold text-slate-800">선택한 날 총 순공부 시간</p>
+              <p id="tt-total-time" class="text-3xl font-extrabold text-slate-950 mt-1">0시간 0분</p>
+              <p id="tt-total-blocks" class="text-xs font-semibold text-slate-700 mt-1">총 0블록 (10분 단위)</p>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl p-4">
+              <h3 class="text-sm font-extrabold text-slate-950 mb-3">과목별 공부 시간 비율</h3>
+              <div id="tt-subject-stats" class="space-y-3">
+                <!-- JS로 과목별 막대 통계 렌더링 -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: 사진 업로드 지원 과목별 복습 노트 ==================== -->
+    <section id="tab-notes" class="tab-content hidden space-y-5">
+      <!-- 상단 헤더 & 새 노트 작성 버튼 -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-950 flex items-center gap-2">
+              <span class="w-2 h-5 rounded-full bg-gradient-to-b from-sky-300 to-violet-300 inline-block"></span> 과목별 복습 & 오답 노트
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">폰으로 찍은 틀린 문제, 필기 노트 사진을 올려두고 시험 직전까지 언제든 복습하세요.</p>
+          </div>
+          <button onclick="toggleNoteForm()" id="toggle-note-form-btn" class="px-4 py-2.5 rounded-xl bg-sky-300 hover:bg-sky-200 text-slate-950 border border-sky-300 text-sm font-extrabold flex items-center justify-center gap-2 transition-all">
+            <i class="fa-solid fa-plus text-xs"></i> 새 복습 노트 작성
+          </button>
+        </div>
+
+        <!-- 새 복습 노트 작성 폼 (토글) -->
+        <div id="note-form-container" class="hidden mb-6 bg-gradient-to-br from-sky-50/80 to-violet-50/50 border border-sky-200/80 rounded-2xl p-4 sm:p-5">
+          <h3 class="text-sm font-extrabold text-slate-950 mb-3 flex items-center gap-1.5">
+            <i class="fa-solid fa-pen-to-square text-sky-800"></i> 새 복습 노트 등록하기
+          </h3>
+          <form onsubmit="saveReviewNote(event)" class="space-y-3.5">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-800 mb-1">과목 선택</label>
+                <select id="note-subject" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-900 focus:outline-none focus:border-sky-300">
+                  <option value="국어">국어</option>
+                  <option value="수학" selected>수학</option>
+                  <option value="영어">영어</option>
+                  <option value="과학">과학</option>
+                  <option value="사회/역사">사회/역사</option>
+                  <option value="기타">기타</option>
+                </select>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-bold text-slate-800 mb-1">단원 / 제목</label>
+                <input type="text" id="note-title" placeholder="예: [수학] 이차함수 그래프 꼭짓점 구하기 오답" required
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-300" />
+              </div>
+            </div>
+
+            <!-- 사진 업로드 영역 -->
+            <div>
+              <label class="block text-xs font-bold text-slate-800 mb-1">사진 업로드 (문제 사진, 필기 노트 등 여러 장 가능)</label>
+              <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-sky-200 rounded-xl bg-white hover:bg-sky-50/60 cursor-pointer transition-colors">
+                <div class="flex flex-col items-center justify-center pt-2 pb-2">
+                  <i class="fa-solid fa-cloud-arrow-up text-2xl text-sky-400 mb-1"></i>
+                  <p class="text-xs font-bold text-slate-900">클릭해서 갤러리/파일에서 사진 선택</p>
+                  <p class="text-[11px] text-slate-500">자동으로 용량이 최적화되어 안전하게 저장됩니다</p>
+                </div>
+                <input type="file" id="note-images-input" accept="image/*" multiple onchange="handleImageUpload(event)" class="hidden" />
+              </label>
+              <!-- 업로드 미리보기 썸네일 -->
+              <div id="note-image-previews" class="flex flex-wrap gap-2 mt-2.5"></div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-800 mb-1">핵심 개념 요약 & 틀린 이유 메모</label>
+              <textarea id="note-content" rows="3" placeholder="꼭 기억해야 할 공식, 문법 포인트, 내가 실수한 부분을 적어보세요." required
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-300"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-2">
+              <button type="button" onclick="toggleNoteForm()" class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50">
+                취소
+              </button>
+              <button type="submit" class="px-5 py-2 rounded-xl bg-sky-300 hover:bg-sky-200 text-slate-950 border border-sky-300 text-xs font-extrabold">
+                복습 노트 저장하기
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 과목 필터 탭 -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-4" id="note-filter-tabs">
+          <button onclick="filterNotes('전체')" data-filter="전체" class="note-filter-btn px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-gradient-to-r from-sky-200 to-violet-200 text-slate-950 border border-sky-300 shrink-0">전체</button>
+          <button onclick="filterNotes('국어')" data-filter="국어" class="note-filter-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-rose-50/70 border border-rose-200/80 text-rose-950 hover:bg-rose-100 shrink-0">국어</button>
+          <button onclick="filterNotes('수학')" data-filter="수학" class="note-filter-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-sky-50/70 border border-sky-200/80 text-sky-950 hover:bg-sky-100 shrink-0">수학</button>
+          <button onclick="filterNotes('영어')" data-filter="영어" class="note-filter-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-violet-50/70 border border-violet-200/80 text-violet-950 hover:bg-violet-100 shrink-0">영어</button>
+          <button onclick="filterNotes('과학')" data-filter="과학" class="note-filter-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-50/70 border border-emerald-200/80 text-emerald-950 hover:bg-emerald-100 shrink-0">과학</button>
+          <button onclick="filterNotes('사회/역사')" data-filter="사회/역사" class="note-filter-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-amber-50/70 border border-amber-200/80 text-amber-950 hover:bg-amber-100 shrink-0">사회/역사</button>
+          <button onclick="filterNotes('기타')" data-filter="기타" class="note-filter-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-orange-50/70 border border-orange-200/80 text-orange-950 hover:bg-orange-100 shrink-0">기타</button>
+        </div>
+
+        <!-- 복습 노트 카드 그리드 -->
+        <div id="notes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- JS로 노트 카드 렌더링 -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 모바일 하단 고정 내비게이션 바 -->
+  <nav class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 flex justify-around items-center py-2 px-1">
+    <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-btn-mobile flex flex-col items-center justify-center py-1 px-3 rounded-xl bg-gradient-to-r from-sky-100 to-violet-100 text-slate-950">
+      <i class="fa-solid fa-house text-base mb-0.5 text-sky-700"></i>
+      <span class="text-[10px] font-extrabold">홈/체크</span>
+    </button>
+    <button onclick="switchTab('calendar')" data-tab="calendar" class="nav-btn-mobile flex flex-col items-center justify-center py-1 px-3 rounded-xl text-slate-500">
+      <i class="fa-regular fa-calendar-days text-base mb-0.5"></i>
+      <span class="text-[10px] font-semibold">달력일정</span>
+    </button>
+    <button onclick="switchTab('timetable')" data-tab="timetable" class="nav-btn-mobile flex flex-col items-center justify-center py-1 px-3 rounded-xl text-slate-500">
+      <i class="fa-solid fa-stopwatch text-base mb-0.5"></i>
+      <span class="text-[10px] font-semibold">10분기록</span>
+    </button>
+    <button onclick="switchTab('notes')" data-tab="notes" class="nav-btn-mobile flex flex-col items-center justify-center py-1 px-3 rounded-xl text-slate-500">
+      <i class="fa-solid fa-book-open text-base mb-0.5"></i>
+      <span class="text-[10px] font-semibold">복습노트</span>
+    </button>
+  </nav>
+
+  <!-- ==================== 모달 1: D-Day 설정 모달 ==================== -->
+  <div id="dday-modal" class="hidden fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 max-w-sm w-full p-5 shadow-xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-base font-extrabold text-slate-950">중요 D-Day 목표 설정</h3>
+        <button onclick="closeDdayModal()" class="text-slate-400 hover:text-slate-900"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="saveDday(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-800 mb-1">목표 이름 (예: 2학기 기말고사, 고입 원서접수)</label>
+          <input type="text" id="dday-input-title" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-sky-300" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-800 mb-1">목표 날짜</label>
+          <input type="date" id="dday-input-date" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-sky-300" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeDdayModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">취소</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-sky-300 hover:bg-sky-200 text-slate-950 border border-sky-300 text-xs font-extrabold">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 모달 2: 복습 노트 상세 & 사진 확대 뷰어 ==================== -->
+  <div id="note-viewer-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
+    <div class="bg-white rounded-2xl border border-slate-200 max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2 min-w-0">
+          <span id="viewer-subject-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-950 shrink-0">수학</span>
+          <h3 id="viewer-title" class="text-base font-extrabold text-slate-950 truncate">노트 제목</h3>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button id="viewer-delete-btn" class="px-2.5 py-1 rounded-lg text-xs font-bold text-rose-900 bg-rose-100 hover:bg-rose-200">
+            <i class="fa-solid fa-trash-can"></i> 삭제
+          </button>
+          <button onclick="closeNoteViewer()" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4">
+        <p id="viewer-date" class="text-xs text-slate-500 font-medium"></p>
+        <!-- 사진 갤러리 -->
+        <div id="viewer-images" class="space-y-3"></div>
+        <!-- 핵심 메모 -->
+        <div class="bg-gradient-to-br from-sky-50/80 to-violet-50/50 p-4 rounded-xl border border-sky-100">
+          <p class="text-xs font-bold text-slate-900 mb-1.5">핵심 개념 요약 & 오답 메모</p>
+          <p id="viewer-content" class="text-sm text-slate-900 whitespace-pre-wrap leading-relaxed"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 컨테이너 -->
+  <div id="toast-container" class="fixed bottom-20 md:bottom-6 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    /* ==========================================================================
+       1. 상태 관리 및 기본 데이터 설정 (localStorage 자동 저장)
+       ========================================================================== */
+    const STORAGE_KEY = 'studylog_grade3_v1';
+
+    // 과목별 파스텔 톤 팔레트
+    const SUBJECT_CONFIG = {
+      '국어': { bg: 'bg-rose-300', lightBg: 'bg-rose-100', text: 'text-rose-950', border: 'border-rose-200', hex: '#FDA4AF' },
+      '수학': { bg: 'bg-sky-300', lightBg: 'bg-sky-100', text: 'text-sky-950', border: 'border-sky-200', hex: '#7DD3FC' },
+      '영어': { bg: 'bg-violet-300', lightBg: 'bg-violet-100', text: 'text-violet-950', border: 'border-violet-200', hex: '#C4B5FD' },
+      '과학': { bg: 'bg-emerald-300', lightBg: 'bg-emerald-100', text: 'text-emerald-950', border: 'border-emerald-200', hex: '#6EE7B7' },
+      '사회/역사': { bg: 'bg-amber-300', lightBg: 'bg-amber-100', text: 'text-amber-950', border: 'border-amber-200', hex: '#FCD34D' },
+      '기타': { bg: 'bg-orange-300', lightBg: 'bg-orange-100', text: 'text-orange-950', border: 'border-orange-200', hex: '#FDBA74' }
+    };
+
+    // 달력 일정 카테고리 파스텔 팔레트
+    const EVENT_COLORS = {
+      '시험': { badge: 'bg-rose-100 text-rose-950 border border-rose-200/80', dot: 'bg-rose-300' },
+      '수행평가': { badge: 'bg-orange-100 text-orange-950 border border-orange-200/80', dot: 'bg-orange-300' },
+      '학원': { badge: 'bg-indigo-100 text-indigo-950 border border-indigo-200/80', dot: 'bg-indigo-300' },
+      '개인': { badge: 'bg-green-100 text-green-950 border border-green-200/80', dot: 'bg-green-300' }
+    };
+
+    function getTodayStr() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function getDefaultData() {
+      const today = getTodayStr();
+      const ddayTarget = new Date();
+      ddayTarget.setDate(ddayTarget.getDate() + 21);
+      const ddayStr = `${ddayTarget.getFullYear()}-${String(ddayTarget.getMonth() + 1).padStart(2, '0')}-${String(ddayTarget.getDate()).padStart(2, '0')}`;
+
+      return {
+        dday: { title: '2학기 기말고사', date: ddayStr },
+        checklists: {
+          daily: [
+            { id: 1, subject: '수학', text: '이차함수 표준형과 일반형 변환 문제 20문제 풀기', done: true },
+            { id: 2, subject: '영어', text: '5과 본문 핵심 문법(관계대명사 계속적 용법) 암기', done: false },
+            { id: 3, subject: '과학', text: '생식과 유전 단원 요약 정리 및 오답 확인', done: false }
+          ],
+          weekly: [
+            { id: 101, subject: '수학', text: '기출문제집 1단원~3단원 오답노트 마무리', done: false },
+            { id: 102, subject: '국어', text: '문학 작품 갈래별 특징 및 표현법 정리', done: true }
+          ],
+          monthly: [
+            { id: 201, subject: '기타', text: '전 과목 평균 95점 달성 & 고등학교 진학 목표 세우기', done: false },
+            { id: 202, subject: '영어', text: '중학 필수 영단어 1800 1회독 완주', done: false }
+          ]
+        },
+        events: {
+          [today]: [
+            { id: 1, category: '수행평가', time: '14:00', title: '과학 실험 보고서 제출 마감' },
+            { id: 2, category: '학원', time: '18:30', title: '수학 심화반 수업' }
+          ]
+        },
+        timetables: {
+          [today]: {
+            '08-0': '영어', '08-1': '영어', '08-2': '영어',
+            '16-0': '수학', '16-1': '수학', '16-2': '수학', '16-3': '수학', '16-4': '수학', '16-5': '수학',
+            '17-0': '수학', '17-1': '수학', '17-2': '수학',
+            '20-0': '과학', '20-1': '과학', '20-2': '과학', '20-3': '과학'
+          }
+        },
+        notes: [
+          {
+            id: 1,
+            subject: '수학',
+            title: '이차함수 y = a(x-p)² + q 그래프 평행이동 주의점',
+            content: 'x축 방향으로 p만큼 평행이동할 때 식에는 (x - p)로 부호가 반대로 들어가지만, y축 방향으로 q만큼 이동할 때는 뒤에 + q 그대로 붙는다! 꼭짓점 좌표 (p, q) 부호 실수하지 말기.',
+            images: [],
+            createdAt: today
+          },
+          {
+            id: 2,
+            subject: '영어',
+            title: '관계대명사 that을 쓸 수 없는 경우 2가지',
+            content: '1. 콤마(,) 뒤 계속적 용법에서는 that 사용 불가 (which나 who 사용)\n2. 전치사 바로 뒤에는 that 사용 불가 (in that X -> in which O)',
+            images: [],
+            createdAt: today
+          }
+        ]
+      };
+    }
+
+    let appData = loadData();
+    let currentTab = 'dashboard';
+    let currentChecklistScope = 'daily';
+    let currentCalYear = new Date().getFullYear();
+    let currentCalMonth = new Date().getMonth();
+    let selectedCalDate = getTodayStr();
+    let currentTimetableDate = getTodayStr();
+    let selectedPaletteSubject = '수학';
+    let isPainting = false;
+    let currentNoteFilter = '전체';
+    let pendingNoteImages = [];
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return getDefaultData();
+        return JSON.parse(raw);
+      } catch (e) {
+        return getDefaultData();
+      }
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+      } catch (e) {
+        showToast('저장 공간이 부족합니다.', 'error');
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const styleClass = type === 'error'
+        ? 'bg-rose-100 text-rose-950 border border-rose-300'
+        : 'bg-gradient-to-r from-sky-100 to-violet-100 text-slate-950 border border-sky-200';
+      toast.className = `${styleClass} text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition-all duration-300 opacity-0 translate-y-2`;
+      toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation text-rose-700' : 'fa-circle-check text-sky-800'}"></i><span>${message}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('opacity-0', 'translate-y-2');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2400);
+    }
+
+    function renderHeaderInfo() {
+      const now = new Date();
+      const days = ['일', '월', '화', '수', '목', '금', '토'];
+      document.getElementById('header-today-date').textContent =
+        `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
+
+      const target = new Date(appData.dday.date + 'T00:00:00');
+      const todayZero = new Date(getTodayStr() + 'T00:00:00');
+      const diffDays = Math.ceil((target - todayZero) / (1000 * 60 * 60 * 24));
+
+      document.getElementById('dday-title-display').textContent = appData.dday.title;
+      const badge = document.getElementById('dday-count-display');
+      if (diffDays === 0) {
+        badge.textContent = 'D-Day';
+      } else if (diffDays > 0) {
+        badge.textContent = `D-${diffDays}`;
+      } else {
+        badge.textContent = `D+${Math.abs(diffDays)}`;
+      }
+    }
+
+    function openDdayModal() {
+      document.getElementById('dday-input-title').value = appData.dday.title;
+      document.getElementById('dday-input-date').value = appData.dday.date;
+      document.getElementById('dday-modal').classList.remove('hidden');
+    }
+
+    function closeDdayModal() {
+      document.getElementById('dday-modal').classList.add('hidden');
+    }
+
+    function saveDday(e) {
+      e.preventDefault();
+      appData.dday.title = document.getElementById('dday-input-title').value.trim();
+      appData.dday.date = document.getElementById('dday-input-date').value;
+      saveData();
+      renderHeaderInfo();
+      closeDdayModal();
+      showToast('D-Day 목표가 업데이트되었습니다!');
+    }
+
+    function switchTab(tabName) {
+      currentTab = tabName;
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn-desktop').forEach(btn => {
+        const icon = btn.querySelector('i');
+        if (btn.dataset.tab === tabName) {
+          btn.classList.remove('border-transparent', 'text-slate-500', 'font-semibold');
+          btn.classList.add('border-sky-300', 'text-slate-950', 'font-bold');
+          if (icon) icon.classList.add('text-sky-700');
+        } else {
+          btn.classList.add('border-transparent', 'text-slate-500', 'font-semibold');
+          btn.classList.remove('border-sky-300', 'text-slate-950', 'font-bold');
+          if (icon) icon.classList.remove('text-sky-700');
+        }
+      });
+
+      document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
+        const icon = btn.querySelector('i');
+        const label = btn.querySelector('span');
+        if (btn.dataset.tab === tabName) {
+          btn.classList.remove('text-slate-500');
+          btn.classList.add('bg-gradient-to-r', 'from-sky-100', 'to-violet-100', 'text-slate-950');
+          if (icon) icon.classList.add('text-sky-700');
+          if (label) label.classList.replace('font-semibold', 'font-extrabold');
+        } else {
+          btn.classList.add('text-slate-500');
+          btn.classList.remove('bg-gradient-to-r', 'from-sky-100', 'to-violet-100', 'text-slate-950');
+          if (icon) icon.classList.remove('text-sky-700');
+          if (label) label.classList.replace('font-extrabold', 'font-semibold');
+        }
+      });
+
+      if (tabName === 'dashboard') renderDashboard();
+      if (tabName === 'calendar') renderCalendar();
+      if (tabName === 'timetable') renderTimetable();
+      if (tabName === 'notes') renderNotes();
+    }
+
+    function setChecklistScope(scope) {
+      currentChecklistScope = scope;
+      document.querySelectorAll('.scope-btn').forEach(btn => {
+        if (btn.dataset.scope === scope) {
+          btn.className = 'scope-btn px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-gradient-to-r from-sky-100 to-violet-100 text-slate-950 border border-sky-200/80 transition-all';
+        } else {
+          btn.className = 'scope-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-950 transition-all';
+        }
+      });
+      renderChecklist();
+    }
+
+    function addChecklistItem(e) {
+      e.preventDefault();
+      const subject = document.getElementById('todo-subject').value;
+      const input = document.getElementById('todo-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appData.checklists[currentChecklistScope].unshift({
+        id: Date.now(),
+        subject,
+        text,
+        done: false
+      });
+
+      input.value = '';
+      saveData();
+      renderDashboard();
+      showToast('목표가 추가되었습니다!');
+    }
+
+    function toggleChecklistItem(scope, id) {
+      const item = appData.checklists[scope].find(i => i.id === id);
+      if (item) {
+        item.done = !item.done;
+        saveData();
+        renderDashboard();
+      }
+    }
+
+    function deleteChecklistItem(scope, id) {
+      appData.checklists[scope] = appData.checklists[scope].filter(i => i.id !== id);
+      saveData();
+      renderDashboard();
+      showToast('항목이 삭제되었습니다.');
+    }
+
+    function renderChecklist() {
+      const list = appData.checklists[currentChecklistScope] || [];
+      const container = document.getElementById('checklist-items');
+      const labels = {
+        daily: '오늘 할 일 달성률',
+        weekly: '이번 주 목표 달성률',
+        monthly: '이번 달 목표 달성률'
+      };
+
+      const total = list.length;
+      const doneCount = list.filter(i => i.done).length;
+      const percent = total === 0 ? 0 : Math.round((doneCount / total) * 100);
+
+      document.getElementById('checklist-scope-label').textContent = labels[currentChecklistScope];
+      document.getElementById('checklist-progress-text').textContent = `${percent}% (${doneCount}/${total})`;
+      document.getElementById('checklist-progress-bar').style.width = `${percent}%`;
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-400 text-sm bg-slate-50/70 rounded-xl border border-dashed border-slate-200">
+            아직 등록된 목표가 없어요. 위 입력창에서 첫 목표를 추가해보세요!
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(item => {
+        const theme = SUBJECT_CONFIG[item.subject] || SUBJECT_CONFIG['기타'];
+        return `
+          <li class="flex items-center justify-between gap-3 p-3.5 rounded-xl border ${item.done ? 'bg-slate-50/70 border-slate-100' : 'bg-white border-slate-200'} hover:border-sky-300 transition-all">
+            <label class="flex items-center gap-3 flex-1 cursor-pointer min-w-0">
+              <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleChecklistItem('${currentChecklistScope}', ${item.id})"
+                class="w-5 h-5 rounded-md accent-sky-300 cursor-pointer shrink-0" />
+              <span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold ${theme.lightBg} ${theme.text} border ${theme.border} shrink-0">${item.subject}</span>
+              <span class="text-sm font-medium truncate ${item.done ? 'line-through text-slate-400' : 'text-slate-950'}">${escapeHtml(item.text)}</span>
+            </label>
+            <button onclick="deleteChecklistItem('${currentChecklistScope}', ${item.id})" class="text-slate-300 hover:text-rose-400 p-1.5 transition-colors shrink-0" title="삭제">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function renderDashboard() {
+      const todayBlocks = appData.timetables[getTodayStr()] || {};
+      const blockCount = Object.keys(todayBlocks).length;
+      const totalMins = blockCount * 10;
+      const hrs = Math.floor(totalMins / 60);
+      const mins = totalMins % 60;
+      document.getElementById('dash-study-time').textContent = `${hrs}시간 ${mins}분`;
+
+      const dailyList = appData.checklists.daily || [];
+      const dTotal = dailyList.length;
+      const dDone = dailyList.filter(i => i.done).length;
+      const dPercent = dTotal === 0 ? 0 : Math.round((dDone / dTotal) * 100);
+      document.getElementById('dash-daily-percent').textContent = `${dPercent}%`;
+      document.getElementById('dash-daily-count').textContent = `${dDone} / ${dTotal} 완료`;
+      document.getElementById('dash-daily-bar').style.width = `${dPercent}%`;
+
+      const todayEvents = appData.events[getTodayStr()] || [];
+      const dashEventEl = document.getElementById('dash-today-events');
+      if (todayEvents.length === 0) {
+        dashEventEl.textContent = '등록된 일정이 없어요';
+      } else {
+        dashEventEl.textContent = `${todayEvents[0].title}${todayEvents.length > 1 ? ` 외 ${todayEvents.length - 1}건` : ''}`;
+      }
+
+      renderChecklist();
+
+      ['monthly', 'weekly', 'daily'].forEach(scope => {
+        const list = appData.checklists[scope] || [];
+        const done = list.filter(i => i.done).length;
+        document.getElementById(`mini-${scope}-stat`).textContent = `${done}/${list.length} 완료`;
+        const ul = document.getElementById(`mini-${scope}-list`);
+        if (list.length === 0) {
+          ul.innerHTML = `<li class="text-slate-400 italic">등록된 목표 없음</li>`;
+        } else {
+          ul.innerHTML = list.slice(0, 4).map(item => `
+            <li class="flex items-center gap-1.5 truncate ${item.done ? 'line-through text-slate-400' : 'text-slate-800'}">
+              <i class="fa-solid ${item.done ? 'fa-circle-check text-emerald-400' : 'fa-circle text-sky-200'} text-[10px]"></i>
+              <span class="truncate">${escapeHtml(item.text)}</span>
+            </li>
+          `).join('');
+        }
+      });
+    }
+
+    function changeMonth(delta) {
+      currentCalMonth += delta;
+      if (currentCalMonth < 0) {
+        currentCalMonth = 11;
+        currentCalYear--;
+      } else if (currentCalMonth > 11) {
+        currentCalMonth = 0;
+        currentCalYear++;
+      }
+      renderCalendar();
+    }
+
+    function goToTodayCalendar() {
+      const now = new Date();
+      currentCalYear = now.getFullYear();
+      currentCalMonth = now.getMonth();
+      selectedCalDate = getTodayStr();
+      renderCalendar();
+    }
+
+    function selectCalendarDate(dateStr) {
+      selectedCalDate = dateStr;
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      document.getElementById('calendar-month-title').textContent = `${currentCalYear}년 ${currentCalMonth + 1}월`;
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay();
+      const lastDate = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
+      const todayStr = getTodayStr();
+
+      for (let i = 0; i < firstDay; i++) {
+        grid.innerHTML += `<div class="h-16 sm:h-20 rounded-xl bg-slate-50/40"></div>`;
+      }
+
+      for (let d = 1; d <= lastDate; d++) {
+        const dateStr = `${currentCalYear}-${String(currentCalMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayEvents = appData.events[dateStr] || [];
+        const isToday = dateStr === todayStr;
+        const isSelected = dateStr === selectedCalDate;
+        const dayOfWeek = new Date(currentCalYear, currentCalMonth, d).getDay();
+
+        let numColor = 'text-slate-900';
+        if (dayOfWeek === 0) numColor = 'text-rose-400';
+        if (dayOfWeek === 6) numColor = 'text-sky-500';
+
+        const borderClass = isSelected
+          ? 'border-2 border-sky-300 bg-gradient-to-br from-sky-50/90 to-violet-50/60'
+          : 'border border-slate-100 hover:border-sky-200 bg-white';
+
+        const dotsHtml = dayEvents.slice(0, 3).map(ev => {
+          const dotColor = (EVENT_COLORS[ev.category] || EVENT_COLORS['개인']).dot;
+          return `<span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>`;
+        }).join('');
+
+        const previewHtml = dayEvents.slice(0, 2).map(ev => {
+          const badge = (EVENT_COLORS[ev.category] || EVENT_COLORS['개인']).badge;
+          return `<div class="hidden sm:block text-[10px] font-semibold px-1.5 py-0.5 rounded truncate ${badge}">${escapeHtml(ev.title)}</div>`;
+        }).join('');
+
+        grid.innerHTML += `
+          <button onclick="selectCalendarDate('${dateStr}')" class="h-16 sm:h-24 p-1.5 rounded-xl ${borderClass} flex flex-col justify-between text-left transition-all overflow-hidden">
+            <div class="flex items-center justify-between w-full">
+              <span class="text-xs font-extrabold ${isToday ? 'w-6 h-6 rounded-full bg-gradient-to-r from-sky-200 to-violet-200 text-slate-950 border border-sky-300 flex items-center justify-center' : numColor}">
+                ${d}
+              </span>
+              <div class="flex sm:hidden gap-0.5">${dotsHtml}</div>
+            </div>
+            <div class="w-full space-y-0.5 mt-1">
+              ${previewHtml}
+              ${dayEvents.length > 2 ? `<div class="hidden sm:block text-[9px] text-slate-400 font-bold pl-1">+${dayEvents.length - 2}개 더</div>` : ''}
+            </div>
+          </button>
+        `;
+      }
+
+      renderSelectedDateEvents();
+    }
+
+    function renderSelectedDateEvents() {
+      const [y, m, d] = selectedCalDate.split('-');
+      document.getElementById('selected-date-title').textContent = `${y}년 ${Number(m)}월 ${Number(d)}일`;
+      const badge = document.getElementById('selected-date-badge');
+      badge.classList.toggle('hidden', selectedCalDate !== getTodayStr());
+
+      const list = appData.events[selectedCalDate] || [];
+      const container = document.getElementById('selected-date-events');
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            이 날짜에 등록된 일정이 없습니다.
+          </div>`;
+        return;
+      }
+
+      const sorted = [...list].sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+
+      container.innerHTML = sorted.map(ev => {
+        const theme = EVENT_COLORS[ev.category] || EVENT_COLORS['개인'];
+        return `
+          <div class="flex items-center justify-between gap-2 p-3 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-white transition-colors">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${theme.badge}">${ev.category}</span>
+                ${ev.time ? `<span class="text-[11px] font-semibold text-slate-500"><i class="fa-regular fa-clock mr-0.5"></i>${ev.time}</span>` : ''}
+              </div>
+              <p class="text-sm font-bold text-slate-800 truncate">${escapeHtml(ev.title)}</p>
+            </div>
+            <button onclick="deleteCalendarEvent(${ev.id})" class="text-slate-300 hover:text-rose-400 p-1.5 shrink-0">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function addCalendarEvent(e) {
+      e.preventDefault();
+      const category = document.getElementById('event-category').value;
+      const time = document.getElementById('event-time').value;
+      const titleInput = document.getElementById('event-title');
+      const title = titleInput.value.trim();
+      if (!title) return;
+
+      if (!appData.events[selectedCalDate]) {
+        appData.events[selectedCalDate] = [];
+      }
+      appData.events[selectedCalDate].push({
+        id: Date.now(),
+        category,
+        time,
+        title
+      });
+
+      titleInput.value = '';
+      saveData();
+      renderCalendar();
+      showToast('일정이 캘린더에 등록되었습니다!');
+    }
+
+    function deleteCalendarEvent(id) {
+      if (!appData.events[selectedCalDate]) return;
+      appData.events[selectedCalDate] = appData.events[selectedCalDate].filter(ev => ev.id !== id);
+      if (appData.events[selectedCalDate].length === 0) {
+        delete appData.events[selectedCalDate];
+      }
+      saveData();
+      renderCalendar();
+      showToast('일정이 삭제되었습니다.');
+    }
+
+    function initTimetableControls() {
+      document.getElementById('timetable-date-picker').value = currentTimetableDate;
+      renderSubjectPalette();
+
+      window.addEventListener('mouseup', () => { isPainting = false; });
+      window.addEventListener('touchend', () => { isPainting = false; });
+    }
+
+    function renderSubjectPalette() {
+      const container = document.getElementById('subject-palette');
+      const subjects = Object.keys(SUBJECT_CONFIG);
+
+      let html = subjects.map(sub => {
+        const cfg = SUBJECT_CONFIG[sub];
+        const active = selectedPaletteSubject === sub;
+        return `
+          <button type="button" onclick="selectPaletteSubject('${sub}')"
+            class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${active ? `${cfg.lightBg} ${cfg.text} ${cfg.border} ring-2 ring-sky-200/70` : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-50'}">
+            <span class="w-3 h-3 rounded-full ${cfg.bg} border border-black/10"></span>
+            ${sub}
+          </button>
+        `;
+      }).join('');
+
+      const isEraser = selectedPaletteSubject === 'ERASER';
+      html += `
+        <button type="button" onclick="selectPaletteSubject('ERASER')"
+          class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${isEraser ? 'border-rose-300 bg-rose-100 text-rose-950 ring-2 ring-rose-200/70' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}">
+          <i class="fa-solid fa-eraser"></i> 지우개
+        </button>
+      `;
+      container.innerHTML = html;
+    }
+
+    function selectPaletteSubject(sub) {
+      selectedPaletteSubject = sub;
+      renderSubjectPalette();
+    }
+
+    function changeTimetableDate(newDate) {
+      if (!newDate) return;
+      currentTimetableDate = newDate;
+      renderTimetable();
+    }
+
+    function clearTimetableDay() {
+      if (appData.timetables[currentTimetableDate]) {
+        delete appData.timetables[currentTimetableDate];
+        saveData();
+        renderTimetable();
+        showToast('해당 날짜의 타임테이블 기록이 초기화되었습니다.');
+      }
+    }
+
+    function applyTimeCell(key, toggleMode = false) {
+      if (!appData.timetables[currentTimetableDate]) {
+        appData.timetables[currentTimetableDate] = {};
+      }
+      const dayMap = appData.timetables[currentTimetableDate];
+
+      if (selectedPaletteSubject === 'ERASER') {
+        delete dayMap[key];
+      } else if (toggleMode && dayMap[key] === selectedPaletteSubject) {
+        delete dayMap[key];
+      } else {
+        dayMap[key] = selectedPaletteSubject;
+      }
+
+      saveData();
+      updateTimetableCellVisual(key);
+      renderTimetableStats();
+    }
+
+    function updateTimetableCellVisual(key) {
+      const cell = document.querySelector(`[data-cell-key="${key}"]`);
+      if (!cell) return;
+      const dayMap = appData.timetables[currentTimetableDate] || {};
+      const subject = dayMap[key];
+
+      if (subject && SUBJECT_CONFIG[subject]) {
+        cell.style.backgroundColor = SUBJECT_CONFIG[subject].hex;
+        cell.classList.remove('bg-white');
+      } else {
+        cell.style.backgroundColor = '';
+        cell.classList.add('bg-white');
+      }
+    }
+
+    function renderTimetable() {
+      const grid = document.getElementById('timetable-grid');
+      const dayMap = appData.timetables[currentTimetableDate] || {};
+      const hours = [];
+      for (let h = 6; h <= 25; h++) hours.push(h);
+
+      grid.innerHTML = hours.map(h => {
+        const displayHour = h >= 24 ? h - 24 : h;
+        const hourLabel = String(displayHour).padStart(2, '0');
+        let cellsHtml = '';
+
+        for (let slot = 0; slot < 6; slot++) {
+          const key = `${hourLabel}-${slot}`;
+          const sub = dayMap[key];
+          const bgStyle = sub && SUBJECT_CONFIG[sub] ? `style="background-color: ${SUBJECT_CONFIG[sub].hex};"` : '';
+          const bgClass = sub ? '' : 'bg-white';
+
+          cellsHtml += `
+            <div data-cell-key="${key}" ${bgStyle}
+              onmousedown="isPainting = true; applyTimeCell('${key}', true)"
+              onmouseenter="if(isPainting) applyTimeCell('${key}', false)"
+              class="time-cell h-6 sm:h-7 rounded-md border border-slate-200/80 ${bgClass} cursor-pointer">
+            </div>
+          `;
+        }
+
+        return `
+          <div class="grid grid-cols-[48px_repeat(6,1fr)] gap-1 items-center">
+            <div class="text-xs font-extrabold text-slate-500 text-center">${hourLabel}시</div>
+            ${cellsHtml}
+          </div>
+        `;
+      }).join('');
+
+      renderTimetableStats();
+    }
+
+    function renderTimetableStats() {
+      const dayMap = appData.timetables[currentTimetableDate] || {};
+      const entries = Object.values(dayMap);
+      const totalBlocks = entries.length;
+      const totalMins = totalBlocks * 10;
+      const hrs = Math.floor(totalMins / 60);
+      const mins = totalMins % 60;
+
+      document.getElementById('tt-total-time').textContent = `${hrs}시간 ${mins}분`;
+      document.getElementById('tt-total-blocks').textContent = `총 ${totalBlocks}블록 (10분 단위)`;
+
+      const counts = {};
+      Object.keys(SUBJECT_CONFIG).forEach(sub => counts[sub] = 0);
+      entries.forEach(sub => {
+        if (counts[sub] !== undefined) counts[sub]++;
+      });
+
+      const statsContainer = document.getElementById('tt-subject-stats');
+      statsContainer.innerHTML = Object.keys(SUBJECT_CONFIG).map(sub => {
+        const cfg = SUBJECT_CONFIG[sub];
+        const bCount = counts[sub];
+        const sMins = bCount * 10;
+        const sHrs = Math.floor(sMins / 60);
+        const remMins = sMins % 60;
+        const pct = totalBlocks === 0 ? 0 : Math.round((bCount / totalBlocks) * 100);
+        const timeStr = sHrs > 0 ? `${sHrs}시간 ${remMins}분` : `${remMins}분`;
+
+        return `
+          <div>
+            <div class="flex justify-between items-center text-xs mb-1">
+              <span class="font-bold text-slate-700 flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full ${cfg.bg}"></span>${sub}
+              </span>
+              <span class="font-bold text-slate-500">${timeStr} (${pct}%)</span>
+            </div>
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div class="${cfg.bg} h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleNoteForm() {
+      const formBox = document.getElementById('note-form-container');
+      formBox.classList.toggle('hidden');
+      if (formBox.classList.contains('hidden')) {
+        pendingNoteImages = [];
+        document.getElementById('note-image-previews').innerHTML = '';
+      }
+    }
+
+    function compressImageFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX_WIDTH = 900;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+            resolve(compressedDataUrl);
+          };
+          img.onerror = reject;
+          img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleImageUpload(e) {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+        try {
+          const dataUrl = await compressImageFile(file);
+          pendingNoteImages.push(dataUrl);
+        } catch (err) {
+          console.error('이미지 압축 실패:', err);
+        }
+      }
+
+      renderPendingPreviews();
+      e.target.value = '';
+    }
+
+    function removePendingImage(idx) {
+      pendingNoteImages.splice(idx, 1);
+      renderPendingPreviews();
+    }
+
+    function renderPendingPreviews() {
+      const container = document.getElementById('note-image-previews');
+      container.innerHTML = pendingNoteImages.map((src, idx) => `
+        <div class="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 shadow-xs group">
+          <img src="${src}" class="w-full h-full object-cover" alt="미리보기" />
+          <button type="button" onclick="removePendingImage(${idx})"
+            class="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-900/70 text-white text-[10px] flex items-center justify-center">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function saveReviewNote(e) {
+      e.preventDefault();
+      const subject = document.getElementById('note-subject').value;
+      const title = document.getElementById('note-title').value.trim();
+      const content = document.getElementById('note-content').value.trim();
+      if (!title || !content) return;
+
+      appData.notes.unshift({
+        id: Date.now(),
+        subject,
+        title,
+        content,
+        images: [...pendingNoteImages],
+        createdAt: getTodayStr()
+      });
+
+      saveData();
+
+      document.getElementById('note-title').value = '';
+      document.getElementById('note-content').value = '';
+      pendingNoteImages = [];
+      document.getElementById('note-image-previews').innerHTML = '';
+      document.getElementById('note-form-container').classList.add('hidden');
+
+      renderNotes();
+      showToast('복습 노트가 저장되었습니다!');
+    }
+
+    function filterNotes(subject) {
+      currentNoteFilter = subject;
+      document.querySelectorAll('.note-filter-btn').forEach(btn => {
+        const filterVal = btn.dataset.filter;
+        if (filterVal === subject) {
+          if (filterVal === '전체') {
+            btn.className = 'note-filter-btn px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-gradient-to-r from-sky-200 to-violet-200 text-slate-950 border border-sky-300 shrink-0';
+          } else {
+            const cfg = SUBJECT_CONFIG[filterVal] || SUBJECT_CONFIG['기타'];
+            btn.className = `note-filter-btn px-3.5 py-1.5 rounded-full text-xs font-extrabold ${cfg.lightBg} ${cfg.text} border ${cfg.border} ring-2 ring-sky-200/70 shrink-0`;
+          }
+        } else {
+          if (filterVal === '전체') {
+            btn.className = 'note-filter-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-sky-50 shrink-0';
+          } else {
+            const cfg = SUBJECT_CONFIG[filterVal] || SUBJECT_CONFIG['기타'];
+            btn.className = `note-filter-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border ${cfg.border} ${cfg.text} hover:${cfg.lightBg} shrink-0`;
+          }
+        }
+      });
+      renderNotes();
+    }
+
+    function renderNotes() {
+      const grid = document.getElementById('notes-grid');
+      const filtered = currentNoteFilter === '전체'
+        ? appData.notes
+        : appData.notes.filter(n => n.subject === currentNoteFilter);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
+            <i class="fa-regular fa-note-sticky text-3xl text-sky-300 mb-2"></i>
+            <p class="text-sm font-bold text-slate-800">아직 등록된 복습 노트가 없어요</p>
+            <p class="text-xs text-slate-500 mt-1">상단의 '새 복습 노트 작성' 버튼을 눌러 사진과 메모를 남겨보세요!</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(note => {
+        const theme = SUBJECT_CONFIG[note.subject] || SUBJECT_CONFIG['기타'];
+        const hasImages = note.images && note.images.length > 0;
+        const thumbHtml = hasImages
+          ? `<div class="relative h-40 w-full bg-slate-100 overflow-hidden border-b border-slate-100">
+               <img src="${note.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="복습 사진" />
+               ${note.images.length > 1 ? `<span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-white/90 text-slate-950 border border-slate-200 text-[10px] font-extrabold">+${note.images.length - 1}장</span>` : ''}
+             </div>`
+          : `<div class="h-24 w-full ${theme.lightBg} border-b border-slate-100 flex items-center justify-center">
+               <span class="text-xs font-bold ${theme.text}"><i class="fa-solid fa-file-lines mr-1"></i>텍스트 요약 노트</span>
+             </div>`;
+
+        return `
+          <article onclick="openNoteViewer(${note.id})" class="group cursor-pointer bg-white rounded-2xl border border-slate-200 hover:border-sky-300 transition-all overflow-hidden flex flex-col">
+            ${thumbHtml}
+            <div class="p-4 flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-1.5">
+                  <span class="px-2 py-0.5 rounded-md text-[11px] font-bold ${theme.lightBg} ${theme.text} border ${theme.border}">${note.subject}</span>
+                  <span class="text-[11px] text-slate-400">${note.createdAt}</span>
+                </div>
+                <h3 class="text-sm font-extrabold text-slate-950 line-clamp-1 mb-1.5 group-hover:text-sky-800 transition-colors">${escapeHtml(note.title)}</h3>
+                <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed">${escapeHtml(note.content)}</p>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function openNoteViewer(id) {
+      const note = appData.notes.find(n => n.id === id);
+      if (!note) return;
+
+      const theme = SUBJECT_CONFIG[note.subject] || SUBJECT_CONFIG['기타'];
+      const badge = document.getElementById('viewer-subject-badge');
+      badge.className = `px-2.5 py-0.5 rounded-full text-xs font-bold ${theme.lightBg} ${theme.text} border ${theme.border} shrink-0`;
+      badge.textContent = note.subject;
+
+      document.getElementById('viewer-title').textContent = note.title;
+      document.getElementById('viewer-date').textContent = `작성일: ${note.createdAt}`;
+      document.getElementById('viewer-content').textContent = note.content;
+
+      const imgContainer = document.getElementById('viewer-images');
+      if (note.images && note.images.length > 0) {
+        imgContainer.innerHTML = note.images.map(src => `
+          <div class="rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+            <img src="${src}" class="w-full max-h-[65vh] object-contain mx-auto" alt="복습 노트 확대 사진" />
+          </div>
+        `).join('');
+      } else {
+        imgContainer.innerHTML = '';
+      }
+
+      document.getElementById('viewer-delete-btn').onclick = () => deleteReviewNote(note.id);
+      document.getElementById('note-viewer-modal').classList.remove('hidden');
+    }
+
+    function closeNoteViewer() {
+      document.getElementById('note-viewer-modal').classList.add('hidden');
+    }
+
+    function deleteReviewNote(id) {
+      appData.notes = appData.notes.filter(n => n.id !== id);
+      saveData();
+      closeNoteViewer();
+      renderNotes();
+      showToast('복습 노트가 삭제되었습니다.');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderHeaderInfo();
+      initTimetableControls();
+      renderDashboard();
+    });
+  </script>
+</body>
+</html>
